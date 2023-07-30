@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "superblocklib",
+  "version": "${version}",
+
+  "name": "Super Block Lib",
+  "description": "A library for easily creating multiblocks.",
+  "authors": [
+    "Iamaprogrammer"
+  ],
+  "contact": {
+    "homepage": "",
+    "sources": ""
+  },
+
+  "license": "MIT",
+  "icon": "assets/superblocklib/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.iamaprogrammer.superblocklib.SuperBlockLib"
+    ]
+  },
+
+  "depends": {
+    "fabricloader": ">=0.14.19",
+    "fabric-api": "*",
+    "minecraft": ">=1.19",
+    "java": ">=17"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
