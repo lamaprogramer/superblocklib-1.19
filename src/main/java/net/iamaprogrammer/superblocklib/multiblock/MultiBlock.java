@@ -11,6 +11,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.DirectionProperty;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3i;
@@ -110,6 +113,14 @@ public class MultiBlock extends BlockWithEntity {
     }
 
     @Override
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+        this.redirectTo(world, state, pos, new Vec3i(2, 2, 2), (r, a) -> {
+            return true;
+        });
+        return super.onUse(state, world, pos, player, hand, hit);
+    }
+
+    @Override
     public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
         MultiBlockEntity mainEntity = (MultiBlockEntity) world.getBlockEntity(pos);
         if (mainEntity != null) {
@@ -193,6 +204,22 @@ public class MultiBlock extends BlockWithEntity {
             }
         }
         return blocksSet == this.MAX_BLOCKS;
+    }
+
+
+    private BlockPos getMainBlock(World world, BlockPos pos) {
+        MultiBlockEntity e = (MultiBlockEntity) world.getBlockEntity(pos);
+        if (e != null) {
+            return e.getMainBlock();
+        }
+        return null;
+    }
+
+    public final boolean redirectTo(World world, BlockState state, BlockPos pos, Vec3i relativePos, BiFunction<BlockPos, Vec3i, Boolean> function) {
+        Direction facing = state.get(FACING);
+        Direction clockwise = facing.rotateYClockwise();
+        BlockPos startPos = pos.offset(facing.getOpposite(), BLOCK_OFFSET_Z).offset(clockwise, BLOCK_OFFSET_X);
+        return true;
     }
 
     @Override
