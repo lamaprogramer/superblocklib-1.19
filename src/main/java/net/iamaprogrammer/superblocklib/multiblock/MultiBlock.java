@@ -11,6 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.DirectionProperty;
+import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
@@ -106,18 +107,10 @@ public class MultiBlock extends BlockWithEntity {
         BlockState state = this.getDefaultState().with(FACING, ctx.getPlayerFacing().getOpposite());
 
         // Check if placeable
-        if (pos.getY() < world.getTopY() - 1 && this.preformOnAll(world, state, pos, (worldPos, relativePos) -> world.getBlockState(worldPos).canReplace(ctx))) {
+        if (pos.getY() < world.getTopY() - 1 && this.applyToAll(world, state, pos, (worldPos, relativePos) -> world.getBlockState(worldPos).canReplace(ctx))) {
             return state;
         }
         return null;
-    }
-
-    @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-        this.redirectTo(world, state, pos, new Vec3i(2, 2, 2), (r, a) -> {
-            return true;
-        });
-        return super.onUse(state, world, pos, player, hand, hit);
     }
 
     @Override
@@ -126,7 +119,7 @@ public class MultiBlock extends BlockWithEntity {
         if (mainEntity != null) {
             BlockPos modelPos = new BlockPos(MODEL_OFFSET_X, MODEL_OFFSET_Y, MODEL_OFFSET_Z);
 
-            this.preformOnAll(world, state, pos, (worldPos, relativePos) -> {
+            this.applyToAll(world, state, pos, (worldPos, relativePos) -> {
                 if (!worldPos.equals(pos) || relativePos.equals(modelPos)) {
                     world.setBlockState(worldPos, state.with(MAIN_BLOCK, worldPos.equals(pos))
                             .with(MODEL_BLOCK, relativePos.equals(modelPos))
@@ -149,7 +142,7 @@ public class MultiBlock extends BlockWithEntity {
             MultiBlockEntity blockEntity = (MultiBlockEntity) world.getBlockEntity(pos);
             if (blockEntity != null) {
                 BlockPos mainPos = blockEntity.getMainBlock();
-                this.preformOnAll(world, state, mainPos, (worldPos, relativePos) -> {
+                this.applyToAll(world, state, mainPos, (worldPos, relativePos) -> {
                     world.removeBlock(worldPos, false);
                     return true;
                 });
@@ -158,7 +151,7 @@ public class MultiBlock extends BlockWithEntity {
         super.onBreak(world, pos, state, player);
     }
 
-    public final boolean preformOnAll(World world, BlockState state, BlockPos pos, BiFunction<BlockPos, Vec3i, Boolean> function) {
+    public final boolean applyToAll(World world, BlockState state, BlockPos pos, BiFunction<BlockPos, Vec3i, Boolean> function) {
         Direction facing = state.get(FACING);
         Direction clockwise = facing.rotateYClockwise();
         BlockPos startPos = pos.offset(facing.getOpposite(), BLOCK_OFFSET_Z).offset(clockwise, BLOCK_OFFSET_X);
@@ -206,20 +199,14 @@ public class MultiBlock extends BlockWithEntity {
         return blocksSet == this.MAX_BLOCKS;
     }
 
-
-    private BlockPos getMainBlock(World world, BlockPos pos) {
-        MultiBlockEntity e = (MultiBlockEntity) world.getBlockEntity(pos);
-        if (e != null) {
-            return e.getMainBlock();
+    public boolean applyToMain(World world, BlockPos pos, BiFunction<BlockState, BlockPos, Boolean> function) {
+        MultiBlockEntity blockEntity = (MultiBlockEntity) world.getBlockEntity(pos);
+        if (blockEntity != null) {
+            BlockPos mainBlockPos = blockEntity.getMainBlock();
+            world.getBlockState(mainBlockPos);
+            return function.apply(world.getBlockState(mainBlockPos), mainBlockPos);
         }
-        return null;
-    }
-
-    public final boolean redirectTo(World world, BlockState state, BlockPos pos, Vec3i relativePos, BiFunction<BlockPos, Vec3i, Boolean> function) {
-        Direction facing = state.get(FACING);
-        Direction clockwise = facing.rotateYClockwise();
-        BlockPos startPos = pos.offset(facing.getOpposite(), BLOCK_OFFSET_Z).offset(clockwise, BLOCK_OFFSET_X);
-        return true;
+        return false;
     }
 
     @Override
