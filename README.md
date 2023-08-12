@@ -68,29 +68,67 @@ When adding interactions to a multiblock, there are two methods you may want to 
 
 These methods will be found in the `MultiBlock` class, and they will be used to decide how the interactions behave.
 
-The first method that will be covered is the `applyToAll()` method:
+
+#### The first method that will be covered is the `applyToAll()` method:
 ```java
-public final boolean applyToAll(World world, BlockState state, BlockPos pos, BiFunction<BlockPos, Vec3i, Boolean> function)
+public boolean applyToAll(World world, BlockState state, BlockPos pos, BiFunction<BlockPos, Vec3i, Boolean> function)
 ```
 
 This method takes in a `World`, `BlockState`, `BlockPos`, and `Bifunction`.
 
-This method takes whatever code you put in the `Bifunction` and applies it to every single block that makes up the multiblock.
+This method will take code from the BiFunction, and apply it to every block that makes up the multiblock.
 
 An example usage would be:
 ```java
 @Override
 public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-    // Get the position of the core block.
-    MultiBlockEntity entity = (MultiBlockEntity) world.getBlockEntity(pos);
-    BlockPos mainBlock = entity != null ? entity.getMainBlock() : null;
-
-    // Now make sure the main block isn't null and then we use the method
-    if (mainBlock != null) {
-        this.applyToAll(world, state, mainBlock, (worldPos, relativePos) -> {
-            return true;
-        });
-    }
+    if (world.isClient() && hand == Hand.MAIN_HAND) {
+            this.applyToAll(world, state, pos, (worldPos, relativePos) -> {
+                player.sendMessage(Text.literal("Hello from: " + relativePos));
+                return true;
+            });
+        }
     return super.onUse(state, world, pos, player, hand, hit);
 }
 ```
+
+Here we just make sure that the use method is only called on the client, and when the hand is the main hand.
+Then we call the `applyToAll()` method, passing in the `World`, `BlockState`, and `BlockPos` given by the `onUse()` method.
+Then for the last parameter, create a BiFunction where we will put our code.
+
+The BiFunction will give you two variables, the position of the current block in the world, and the position of the block relative to the multiblock structure.
+In this example, the relative position is sent in a message to the player, this will result in the relative positions of all blocks in the multiblock being output to the player.
+
+Thats pretty much all there is to the `applyToAll()` method, you can get way more complex in usage, but this example should be enough to get you started.
+
+
+#### The second method we will go over is the `applyToMain()` method:
+```java
+boolean applyToMain(World world, BlockPos pos, BiFunction<BlockState, BlockPos, Boolean> function)
+```
+
+This method takes in a `World`, `BlockPos`, and `Bifunction`.
+
+This method will take code from the BiFunction, and apply it to the main block, that way, no matter what part of the multiblock you click, it will always redirect to the main block.
+
+An example usage would be:
+```java
+@Override
+public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+    if (world.isClient() && hand == Hand.MAIN_HAND) {
+        this.applyToMain(world, pos, (mainState, mainPos) -> {
+            player.sendMessage(Text.literal("Hello from: " + mainPos));
+            return true;
+        });
+    }
+
+    return super.onUse(state, world, pos, player, hand, hit);
+}
+```
+
+As you can see, the usage of the method is very similar to the `applyToAll()` method, however this will only be running on the 1 main block instead of every single block.
+
+This time, the BiFunction will provide the `BlockState` and `BlockPos` for the main block.
+This should allow you to modify/use the block however you need, in this case, we just message the main block position to the player.
+
+### Complex Shapes
