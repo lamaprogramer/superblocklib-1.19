@@ -64,6 +64,7 @@ Once everything is implemented, boot up your game and check out the results!
 Now that you have a basic understanding of how the library works, we can move on to more complex stuff such as handling interactions with some handy helper methods and creating complex shapes!
 
 ### Adding Interactions
+
 When adding interactions to a multiblock, there are two methods you may want to know of, `applyToAll()` and `applyToMain()`.
 
 These methods will be found in the `MultiBlock` class, and they will be used to decide how the interactions behave.
@@ -132,3 +133,23 @@ This time, the BiFunction will provide the `BlockState` and `BlockPos` for the m
 This should allow you to modify/use the block however you need, in this case, we just message the main block position to the player.
 
 ### Complex Shapes
+
+Complex shapes are shapes that you will define block-by-block within a certain area.
+
+To get started with complex shapes, we will go back to the `MultiblockPositioner` and its Builder.
+
+```java
+public static final Block DUMPSTER_MULTI_BLOCK = register("multi_block", new DumpsterMultiblock(
+    AbstractBlock.Settings.of(Material.METAL).strength(4),
+    new MultiblockPositioner.Builder(
+            new Vec3i(5, 5, 5),
+            new ArrayList<>(List.of(
+                    new Point(2, 1, 2),
+                    new Point(2, 2, 2),
+                    new Point(2, 1, 1),
+                    new Point(1, 1, 2),
+                    new Point(2, 1, 3),
+                    new Point(3, 1, 2)))
+    ).build()
+));
+```
